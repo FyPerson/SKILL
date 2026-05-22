@@ -30,12 +30,75 @@ Claude Code already has `/memory`. So does every "save my chat" plugin out there
 
 ```bash
 # Clone into your Claude Code skills directory
-git clone https://github.com/<you>/memory-keeper ~/.claude/skills/memory-keeper
+git clone https://github.com/FyPerson/SKILL ~/.claude/skills/memory-keeper
 ```
 
 On Windows: `%USERPROFILE%\.claude\skills\memory-keeper`
 
 The skill auto-creates `~/.claude/worklog/` on first run (with confirmation). Override with `$CLAUDE_WORKLOG_ROOT` if you want a different root.
+
+## Use in other tools
+
+The skill's core mechanism — per-item confirmation, long-term vs one-off distinction, recurrence detection, three-layer storage — is tool-agnostic. Only the **distribution/trigger format** is Claude Code-specific. Two adapted setups below:
+
+### Cursor
+
+Cursor has no `/skill` command, but `.cursor/rules/*.mdc` rules can carry the same protocol.
+
+```bash
+mkdir -p .cursor/rules
+cp SKILL.md .cursor/rules/memory-keeper.mdc
+```
+
+Then prepend MDC frontmatter to `.cursor/rules/memory-keeper.mdc`:
+
+```yaml
+---
+description: Manually-triggered session memory distillation. Trigger when user types /memory-keeper, /记一下, or /sm.
+globs: ["**/*"]
+alwaysApply: false
+---
+```
+
+**Trade-offs vs Claude Code**:
+- No native slash command — Cursor reads the user's plain text. The model decides whether to trigger based on the rule's `description`. Use a deterministic trigger phrase ("/memory-keeper" works as plain text too).
+- File writes go through Cursor's Agent mode (Cmd/Ctrl+I), not directly via the rule.
+- Same per-item / recurrence-detection / restatement behavior applies — the protocol depends on multi-turn dialogue, not on Claude Code internals.
+
+### Codex CLI / AGENTS.md / Any agent honoring an instructions file
+
+If your tool reads an `AGENTS.md` (Codex CLI, Sourcegraph Amp, etc.) or a global system prompt:
+
+```bash
+# Append the protocol section into AGENTS.md
+cat SKILL.md >> AGENTS.md
+```
+
+Or extract just the **protocol** (sections "What to extract", "Pre-execution self-check", "Execution flow", "Confirmation flow detail", "Single-item display format") into a dedicated instructions block, and remove the Claude Code-specific paragraphs (frontmatter, `$ARGUMENTS`, the "/memory-keeper" command name — replace with whatever your tool uses).
+
+**Trade-offs**:
+- `$CLAUDE_WORKLOG_ROOT` becomes whatever env var or hardcoded path your tool uses.
+- The trigger surface is plain conversation, not a slash command.
+- The two anti-reflex mechanisms (startup restatement + three-question self-check) port cleanly — they depend only on the model honoring instructions in the conversation stream.
+
+### What stays universal regardless of tool
+
+These work in any LLM tool that supports multi-turn conversation:
+
+- **CAR structure** for extraction (Context / Action / Result)
+- **Per-item confirmation** with single-item display
+- **Long-term vs one-off** preference split with two-sided reasoning
+- **Recurrence detection** logic (if the tool can read prior session files)
+- **Startup constraint restatement** as the first message
+- **Pre-output three-question self-check**
+
+These do NOT work without local file I/O (rules out pure-web ChatGPT / Claude web without artifacts):
+
+- Writing `session_YYYYMMDD.md` to disk
+- Cross-session recurrence scan (needs to grep past files)
+- `git log` integration in review mode
+
+For pure-web setups, you can degrade to "have the model output the session log as markdown at the end of each conversation, and you manually save it to disk".
 
 ## Usage
 
@@ -169,6 +232,69 @@ git clone https://github.com/FyPerson/SKILL ~/.claude/skills/memory-keeper
 Windows：`%USERPROFILE%\.claude\skills\memory-keeper`
 
 skill 在首次运行时会询问你是否在 `~/.claude/worklog/` 创建工作日志根目录。想换路径用环境变量 `$CLAUDE_WORKLOG_ROOT` 覆盖。
+
+## 在其他工具里使用
+
+skill 的核心机制——逐条确认、长期/一次性区分、复发检测、三层存储——与具体工具无关。**只有"分发和触发方式"是 Claude Code 独有**。下面给两种适配方式：
+
+### Cursor
+
+Cursor 没有 `/skill` 命令，但 `.cursor/rules/*.mdc` 规则可以承载同一套协议。
+
+```bash
+mkdir -p .cursor/rules
+cp SKILL.md .cursor/rules/memory-keeper.mdc
+```
+
+然后在 `.cursor/rules/memory-keeper.mdc` 开头加 MDC frontmatter：
+
+```yaml
+---
+description: 手动触发的会话记忆沉淀。用户输入 /memory-keeper、/记一下 或 /sm 时触发。
+globs: ["**/*"]
+alwaysApply: false
+---
+```
+
+**相比 Claude Code 的代价**：
+- 没有原生 slash 命令——Cursor 读的是用户的纯文本，模型根据规则 `description` 决定是否触发。用一个确定性触发短语（"/memory-keeper" 作为纯文本也行）。
+- 文件写入要走 Cursor 的 Agent 模式（Cmd/Ctrl+I），不能由规则直接执行。
+- 逐条 / 复发检测 / 复述 等行为完全沿用——协议依赖的是多轮对话，不依赖 Claude Code 内部机制。
+
+### Codex CLI / AGENTS.md / 任何认 instructions 文件的 agent
+
+如果你用的工具读取 `AGENTS.md`（Codex CLI、Sourcegraph Amp 等）或全局 system prompt：
+
+```bash
+# 把协议段追加到 AGENTS.md
+cat SKILL.md >> AGENTS.md
+```
+
+或者只把**协议部分**（"What to extract"、"Pre-execution self-check"、"Execution flow"、"Confirmation flow detail"、"Single-item display format" 这几节）提取成一份独立的指令块，然后移除 Claude Code 特有的段落（frontmatter、`$ARGUMENTS`、"/memory-keeper" 命令名——替换成你工具用的命名）。
+
+**代价**：
+- `$CLAUDE_WORKLOG_ROOT` 要换成你工具用的环境变量或硬编码路径。
+- 触发面是纯对话，不是 slash 命令。
+- 两个反反射机制（启动复述 + 三问自检）完全可移植——它们只依赖"模型遵循对话流里的指令"。
+
+### 什么能力跨工具通用
+
+下面这些在任何支持多轮对话的 LLM 工具里都能用：
+
+- **CAR 提取结构**（Context / Action / Result）
+- **逐条确认 + 单条展示**
+- **长期/一次性偏好的双向理由分流**
+- **复发检测**（前提：工具能读到过往 session 文件）
+- **启动时复述约束**
+- **输出前三问自检**
+
+下面这些在纯网页 ChatGPT / Claude 网页（无 artifacts）里**不能用**：
+
+- 把 `session_YYYYMMDD.md` 写到磁盘
+- 跨 session 复发扫描（需要 grep 过往文件）
+- 回顾模式的 `git log` 集成
+
+纯网页场景下可以降级为"让模型在每次对话末尾输出 markdown 格式的会话日志，由你自己手动存到磁盘"。
 
 ## 使用
 
