@@ -6,13 +6,13 @@
 
 <a id="english"></a>
 
-A disciplined session-memory keeper for Claude Code. Distills decisions, preferences, gotchas, todos and milestones from your conversation into structured worklog files — with **per-item confirmation** and a **long-term vs one-off** distinction.
+A disciplined session-memory keeper for LLM coding agents (natively packaged for Claude Code; adapters provided for Cursor and Codex CLI). Distills decisions, preferences, gotchas, todos and milestones from your conversation into structured worklog files — with **per-item confirmation** and a **long-term vs one-off** distinction.
 
 > Built to override the LLM reflex of "dump the full draft in one message". Counter-intuitive on purpose.
 
 ## Why another memory skill?
 
-Claude Code already has `/memory`. So does every "save my chat" plugin out there. They mostly do one of two things:
+Most LLM coding agents ship some form of memory — Claude Code has `/memory`, Cursor has Rules, and there's no shortage of "save my chat" plugins. They mostly do one of two things:
 
 1. **Save the whole conversation** (you re-read a wall of text later)
 2. **Auto-summarize on every turn** (silent drift, no provenance)
@@ -202,13 +202,13 @@ MIT
 
 **语言**：[English](#english) | [中文](#中文)
 
-一个给 Claude Code 用的会话记忆沉淀工具。把你对话里的关键决策、偏好、踩坑、待办、里程碑结构化地写入工作日志——**逐条确认**，且**区分"长期偏好"和"一次性需求"**。
+一个给 LLM 编程智能体用的会话记忆沉淀工具（原生面向 Claude Code 打包，同时提供 Cursor 和 Codex CLI 的适配方案）。把你对话里的关键决策、偏好、踩坑、待办、里程碑结构化地写入工作日志——**逐条确认**，且**区分"长期偏好"和"一次性需求"**。
 
 > 设计目标是压住 LLM 那个"一次性甩完全部草稿"的反射。反直觉是刻意的。
 
 ## 为什么再造一个记忆 skill？
 
-Claude Code 原生有 `/memory`，市面上"保存对话"的插件也很多。它们基本是两种模式：
+主流 LLM 编程智能体都自带某种记忆功能——Claude Code 有 `/memory`，Cursor 有 Rules，市面上"保存对话"的插件也不少。它们基本是两种模式：
 
 1. **保存整段对话**（你两个月后翻一堵文字墙）
 2. **每轮自动摘要**（黑盒漂移，无溯源）
