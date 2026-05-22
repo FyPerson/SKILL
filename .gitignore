@@ -1,0 +1,17 @@
+# Local-only drafts (not for public repo)
+PROMO_ZH.md
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+*~
+
+# Backup files
+*.bak
+*.orig
